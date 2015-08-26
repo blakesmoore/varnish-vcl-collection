@@ -6,26 +6,16 @@ backend default {
 import std;
 
 include "lib/xforward.vcl";
-include "lib/cloudflare.vcl";
 include "lib/purge.vcl";
-include "lib/bigfiles.vcl";        # Varnish 3.0.3+
-#include "lib/bigfiles_pipe.vcl";  # Varnish 3.0.2
 include "lib/static.vcl";
-
-acl cloudflare {
-	# set this ip to your Railgun IP (if applicable)
-	# "1.2.3.4";
-}
 
 acl purge {
 	"localhost";
 	"127.0.0.1";
+	# Change the below to your VarnishNet subnet
+	"192.168.7.0"/24;
 }
 
-# Pick just one of the following:
-# (or don't use either of these if your application is "adaptive")
-# include "lib/mobile_cache.vcl";
-# include "lib/mobile_pass.vcl";
 
 ### WordPress-specific config ###
 # This config was initially derived from the work of Donncha Ó Caoimh:
@@ -122,3 +112,4 @@ sub vcl_fetch {
 	# Deliver the content
 	return(deliver);
 }
+
