@@ -48,36 +48,6 @@ Example usage::
 	}
 
 
-Mobile Device Optimizaiton
-==========================
-
-Different applications optimize for mobile devices in different ways.  The
-best way is to use an "adaptive" design so that the same HTML is served to
-both desktop and mobile devices.  If your application is "adaptive", then
-no special Varnish config is necessary; all devices will access the same
-objects in the Varnish cache.
-
-However, if your application does serve different content to different
-devices, then you'll need to handle that in Varnish.  Since applications
-do mobile device detection differently, the VCL code included here is
-intentionally limited and simple.  Crafting a custom configuration to handle
-the way your application treats mobile devices will usually give better
-results than using one of the following standard configs.
-
-`lib/mobile_cache.vcl` simply adds the string `mobile` to the hash data to
-give mobile devices a separate cache from non-mobile devices.  This is only
-viable if your application serves just 2 different versions of each page
-depending on if the visitor is on a mobile device or not (and if the
-application uses the same method to detect mobile devices).  Any disagreement
-between `mobile_cache.vcl` and your backend on what User-Agents should be
-considered "mobile" could mean that the incorrect versions of pages are
-served to some visitors.
-
-`lib/mobile_pass.vcl` simply disables caching for mobile devices.  This is
-not good for performance, but will at least will prevent serving the
-incorrect version of pages to mobile visitors.
-
-
 HTTP Purging
 ============
 
@@ -113,33 +83,3 @@ cookies for these requests.  This will also cache static files for 24 hours.
 The cache behavior for this vcl can be bypassed by adding `nocache` to the
 url.  For example, `http://example.com/foo.jpg?nocache` will always
 retrieve the file from the backend instead of serving from the cache.
-
-
-Big Files
-=========
-
-Varnish cannot cache files larger than the entire cache.  Additionally, a few
-large files could potentially fill up the cache and force many more small
-files to be removed from the cache. Use `lib/bigfiles.vcl` or
-`lib/bigfiles_pipe.vcl` to prevent caching files larger than 10 MB.  This
-size was chosen because this should allow most common website assets to be
-cached.  Files larger than 10 MB such as videos, long podcasts, or binary
-downloads are better suited to be served with a CDN or some server separate
-from your main web application.  This config will still allow Varnish to
-serve these large files, but the files will always be retrieved from the
-backend.
-
-`lib/bigfiles.vcl` marks files with `hit_for_pass` when they are above the
-size threshold.  However this only works in Varnish 3.0.3 or later.  Earlier
-versions of Varnish will instead show an internal server error when this
-method is used.  In the case of these older versions of Varnish, you should
-use `lib/bigfiles_pipe.vcl`, which instead pipes the request.
-
-Your main VCL must have `import std;`.  This import line is not included
-within the files themselves because having an import multiple times in a
-Varnish config (counting all included files) produces a compile error.
-
-Example usage::
-
-	import std;
-	include "lib/bigfiles.vcl";
